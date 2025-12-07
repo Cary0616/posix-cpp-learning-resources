@@ -1,0 +1,27 @@
+# define - configuration for build/compile.sh
+# This file is sourced by the build script, so use valid shell assignments.
+# Edit values below as needed.
+
+# Target executable name (optional, script has default)
+TARGET="main"
+
+# Optimization flags (used for compilation)
+OPT_LEVEL=-O2
+
+# Extra flags used for both compilation and linking.
+# Include -pthread here if your code uses threads.
+EXTRA_FLAGS="-Wall -Wextra -std=c++17 -pthread"
+
+# Libraries to pass to linker (keep together in one variable)
+LIBS="-pthread -lm"
+
+# Include paths (each -I path inside quotes)
+INCLUDE_PATH="-I./head -I./third_party/include"
+
+# Library search paths (each -L path inside quotes)
+LIB_PATH="-L./third_party/lib"
+
+# Additional, optional user flags (empty by default)
+USER_FLAGS=""
+
+# End of file - avoid trailing unbalanced quotes or stray commands

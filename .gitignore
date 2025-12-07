@@ -1,0 +1,21 @@
+# Ignore build outputs
+/out/
+
+# Object files and temporary build artifacts
+*.o
+*.obj
+
+# Binary/executable
+/out/bin/
+out/bin/
+
+# Editor/temp files
+*~
+*.swp
+.DS_Store
+
+# Backup define files created by the script
+define.bak*
+
+# Logs
+*.log
