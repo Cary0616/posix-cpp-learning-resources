@@ -127,15 +127,21 @@ fi
 
 # ==================== 步骤6：检查源文件（仅编译时）====================
 if [ "$ACTION" = "compile" ]; then
-    SRC_FILES=$(find "$SRC_DIR" -type f -name "*.cpp")
-    if [ -z "$SRC_FILES" ]; then
-        error_exit "在 ${SRC_DIR} 目录下未找到任何.cpp源文件，请检查目录或添加源文件"
+    SRC_FILES=()
+    while IFS= read -r f; do [ -n "$f" ] && SRC_FILES+=("$f"); done < <(find "$SRC_DIR" -type f \( -name "*.cpp" -o -name "*.c" \) | sort)
+    if [ ${#SRC_FILES[@]} -eq 0 ]; then
+        error_exit "在 ${SRC_DIR} 目录下未找到任何 .cpp 或 .c 源文件，请检查目录或添加源文件"
     fi
 
     # 生成目标文件路径
     OBJ_FILES=()
-    for src in $SRC_FILES; do
-        obj_name=$(basename "$src" .cpp).o
+    for src in "${SRC_FILES[@]}"; do
+        base=$(basename "$src")
+        if [[ "$base" == *.cpp ]]; then
+            obj_name=$(basename "$src" .cpp).o
+        else
+            obj_name=$(basename "$src" .c).o
+        fi
         obj_path="$OBJ_DIR/$obj_name"
         OBJ_FILES+=("$obj_path")
     done
@@ -149,19 +155,31 @@ fi
 
 # ==================== 步骤8：编译源文件（仅编译时）====================
 if [ "$ACTION" = "compile" ]; then
-    echo -e "\n${BLUE}=== 开始编译源文件（共 $(echo $SRC_FILES | wc -w) 个文件）===${NC}"
+    echo -e "\n${BLUE}=== 开始编译源文件（共 ${#SRC_FILES[@]} 个文件）===${NC}"
     for i in "${!SRC_FILES[@]}"; do
         src=${SRC_FILES[$i]}
         obj=${OBJ_FILES[$i]}
         src_name=$(basename "$src")
-        
+        # .c 用 gcc，.cpp 用 g++
+        if [[ "$src_name" == *.cpp ]]; then
+            CC_CMD="g++"
+        else
+            CC_CMD="gcc"
+        fi
+
         echo -e "\n${YELLOW}[编译] 正在处理：$src_name${NC}"
-        g++ "$src" -c -o "$obj" \
+        if [[ "$src_name" == *.cpp ]]; then
+            CFLAGS="$EXTRA_FLAGS"
+        else
+            CFLAGS="-Wall -Wextra -std=c11"
+            [ $DEBUG_MODE -eq 1 ] && CFLAGS="$CFLAGS -g"
+        fi
+        $CC_CMD "$src" -c -o "$obj" \
             $INCLUDE_PATH \
             $OPT_LEVEL \
-            $EXTRA_FLAGS \
+            $CFLAGS \
             2>&1 | sed "s/error:/${RED}错误：${NC}/g; s/warning:/${YELLOW}警告：${NC}/g"
-        
+
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}[成功] $src_name → $(basename "$obj")${NC}"
         else
